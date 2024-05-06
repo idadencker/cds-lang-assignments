@@ -21,17 +21,14 @@ def prepare_data(filepath):
                                                         y,         
                                                         test_size=0.2,   
                                                         random_state=42) 
-
     '''
-    Make vectorizer 
+    Define vectorizer that only makes unigrams and bigrams, lowercases all, removes very common and rare words and keeps only the top 500 features
     '''
     vectorizer = TfidfVectorizer(ngram_range = (1,2),     
                                 lowercase =  True,       
                                 max_df = 0.95,           
                                 min_df = 0.05,           
                                 max_features = 500)      
-
-
     '''
     Save the vectorizer in the models folder
     '''
@@ -43,7 +40,8 @@ def prepare_data(filepath):
 
 def fit_vectorizer(X_train, X_test, vectorizer):
     '''
-    Fit the vectorizer to the data
+    Fit the vectorizer to the data. fit_transform() is used on the training data to scale it. The test data is transformed.
+    This ensures that the model is not biased towards a specific feature and prevents the model from learning from the test data.
     '''
     X_train_feats = vectorizer.fit_transform(X_train)
     X_test_feats = vectorizer.transform(X_test)
@@ -56,10 +54,12 @@ def fit_vectorizer(X_train, X_test, vectorizer):
     sp.sparse.save_npz('feature_extracted_object/X_test_feats.npz', X_test_feats)
 
 
+
 def main():
-    filepath= os.path.join("..","cds-language", "data", "fake_or_real_news.csv")
+    filepath= os.path.join("in", "fake_or_real_news.csv")
     X_train, X_test, vectorizer = prepare_data(filepath)
     fit_vectorizer(X_train, X_test, vectorizer)
+
 
 
 if __name__ == "__main__":

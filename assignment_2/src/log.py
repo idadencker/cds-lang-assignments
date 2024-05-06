@@ -8,6 +8,7 @@ from sklearn.neural_network import MLPClassifier
 from sklearn import metrics
 import scipy as sp
 from joblib import dump, load
+from sklearn.model_selection import GridSearchCV
 
 
 
@@ -21,11 +22,9 @@ def prepare_data(filepath):
                                                         y,          
                                                         test_size=0.2,   
                                                         random_state=42) 
-
     '''
     Load in vectorized data
     '''
-
     X_test_feats = sp.sparse.load_npz('feature_extracted_object/X_test_feats.npz')
     X_train_feats = sp.sparse.load_npz('feature_extracted_object/X_train_feats.npz')
     
@@ -33,34 +32,57 @@ def prepare_data(filepath):
 
 
 
+def fitting_model(X_train_feats, X_test_feats, y_train):
+    """ Defining what parameters will be optimsed """
+    grid = {
+        "C": [1.0, 0.1, 0.01], 
+        "penalty": ["l1", "l2", 'elasticnet', None],
+        "solver": ['lbfgs', 'liblinear', 'newton-cg', 'newton-cholesky', 'sag', 'saga'],
+        "max_iter": [500]
+    }
+    logreg = LogisticRegression()
+    logreg_cv = GridSearchCV(logreg, grid, scoring='accuracy', cv=10, n_jobs=-1, verbose=2)
+    
+    print("Tuning hyperparameters...")
+    model = logreg_cv.fit(X_train_feats, y_train)
+    
+    """ Print parameters for each combination tried """
+    print("\nParameter combinations tried:")
+    means = logreg_cv.cv_results_['mean_test_score']
+    stds = logreg_cv.cv_results_['std_test_score']
+    for mean, std, params in zip(means, stds, logreg_cv.cv_results_['params']):
+        print(f"Accuracy: {mean:.4f} (±{std:.4f}) for {params}")
+
+    """ Print the hyperparamerts and accuracy for the best model """
+    print("Tuned hyperparameters (best parameters):", logreg_cv.best_params_)
+    print("Accuracy:", logreg_cv.best_score_)
+
+    y_pred = model.predict(X_test_feats)
+
+    return model, y_pred
 
 
-def fit_predict(X_train_feats, X_test_feats, y_train, y_test):
-    '''
-    Fit the classifier to the data and get predictions
-    '''
-    classifier = LogisticRegression(random_state=42).fit(X_train_feats, y_train)
 
-    y_pred = classifier.predict(X_test_feats)
-
-
+def save_metrics(y_test, y_pred, model):
     '''
     Make and save classification report
     '''
     classifier_metrics = metrics.classification_report(y_test, y_pred)
-
-    filepath = "out/NN_classification_report.txt"
+    filepath = "out/log_classification_report.txt"
 
     with open(filepath, 'w') as file:
         file.write(classifier_metrics)
 
-    dump(classifier, "models/log_classifier.joblib")
+    dump(model, "models/log_classifier.joblib")
+
 
 
 def main():
-    filepath= os.path.join("..","cds-language", "data", "fake_or_real_news.csv")
+    filepath= os.path.join("in", "fake_or_real_news.csv")
     X_train_feats, X_test_feats, y_train, y_test = prepare_data(filepath)
-    fit_predict(X_train_feats, X_test_feats, y_train, y_test)
+    model, y_pred = fitting_model(X_train_feats,X_test_feats, y_train)
+    save_metrics(y_test, y_pred, model)
+
 
 
 if __name__ == "__main__":
