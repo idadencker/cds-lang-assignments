@@ -13,7 +13,7 @@ The dataset is the ```The Uppsala Student English Corpus (USE)``` dataset which 
 The repository consists of:
 - 1 README.md file
 - 2 bash scripts
-- 1 requirenments file
+- 1 requirements file
 - in folder for storing input data
 - out folder for holding the saved results
 - src folder containing the script for extracting linguistic features 
@@ -42,6 +42,6 @@ $ source run.sh
 14 CSV files and 2 plots will be saved the the out folder 
 
 
- ## Summary and discussion
+## Summary and discussion
 Upon analyzing visualizations of relative frequencies and the utilization of nouns, verbs, adverbs, and adjectives, a consistent pattern emerges across all terms and essays. Nouns overwhelmingly dominate as the most frequently used part of speech (POS) in all essays, followed by verbs and adjectives. Conversely, adverbs consistently exhibit the lowest frequency, averaging approximately 400-600 instances per 10,000 words across all essays. While fluctuations within the POS categories show no discernible pattern based on terms (i.e., A, B, or C), examining the average number of named entities reveals more dispersed patterns. Although "person" emerges as the most frequently occurring named entity across most essays, organizations follow closely behind. Notably, in the case of category C1, the average number of persons is notably higher compared to other essays within the same category. However, it's essential to highlight that the averages of named entities are not proportional to the length of the essays and are solely based on counts. Upon reviewing the data source explanations, it becomes evident that C1 comprises longer essays, which logically accounts for the significant count of person named entities within that group. 
 Several general limitations should be considered, including the fact that terms (A, B, C) encompass essays covering a diverse range of topics, which may influence the frequency of certain POS as different topics can encourage different POS distributions. Additionally, the C1 category (third-term essays) contains relatively few examples, making it challenging to draw conclusive patterns within the three different terms.
