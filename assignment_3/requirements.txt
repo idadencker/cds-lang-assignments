@@ -1,4 +1,4 @@
 pandas 
 gensim
 argparse
-string 
+scipy==1.10.1

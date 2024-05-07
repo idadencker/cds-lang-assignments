@@ -4,6 +4,7 @@ import argparse
 import string
 
 
+
 def get_artist_and_word():
     '''
     Function for getting and saving argparsers
@@ -20,29 +21,43 @@ def get_artist_and_word():
     args = parser.parse_args()
     args.artist= args.artist.lower()
     args.search_term= args.search_term.lower()
+    
     return args
 
 
-def calculate_stats(args): 
+
+def list_similar_words(model, chosen_search_term):
+    '''
+    Using the loaded gensim model, a list is created containing the 10 most similar words to the chosen search term  
+    '''
+    similar_words_list = []
+    words = model.most_similar(chosen_search_term)
+    for word, _ in words:
+        similar_words_list.append(word)
+
+    return similar_words_list
+
+
+
+def calculate_stats(args, model, song_data): 
     '''
     Function that will return name of the artist chosen, the chosen search term, and the percentage of that artist songs that contain word(s) related to the search term
     '''
     name_of_artist = args.artist
     chosen_search_term = args.search_term
 
-    model = api.load("glove-wiki-gigaword-50")
-    song_data = pd.read_csv("data/Spotify Million Song Dataset_exported.csv")
+    """ A list of the most similar words are created """
+    similar_words_list = list_similar_words(model, chosen_search_term)
 
-    similar_words_list = []
-    words = model.most_similar(chosen_search_term)
-    for word, _ in words:
-        similar_words_list.append(word)
-
-    
+    """ Removes all punctuation characters from the song texts """
     song_data['text'] = song_data['text'].apply(lambda x: x.translate(str.maketrans('', '', string.punctuation)))
-        
-    artist_df = song_data[song_data['artist'].str.lower() == name_of_artist]
 
+    """ Create a dataframe containing the artist's songs and raise an error if the artist is not in the data """
+    artist_df = song_data[song_data['artist'].str.lower() == name_of_artist]
+    if artist_df.empty:
+        raise ValueError(f"Artist '{name_of_artist}' not found in the dataset.")
+
+    """ Calculate n_songs_where_word_from_wordslist_appears """
     songs_already_counted = set()  
 
     n_songs_where_word_from_wordslist_appears = 0
@@ -52,18 +67,26 @@ def calculate_stats(args):
                 n_songs_where_word_from_wordslist_appears += 1
                 songs_already_counted.add(song_text)  
 
-    total_n_songs_for_artist = len(artist_df)
 
-    percentage = round(((n_songs_where_word_from_wordslist_appears / total_n_songs_for_artist) * 100),2)
+    percentage = round(((n_songs_where_word_from_wordslist_appears / len(artist_df)) * 100),2)
 
     return name_of_artist, chosen_search_term, percentage
 
 
+
 def main():
-    args= get_artist_and_word()
-    name_of_arist, chosen_search_term, percentage= calculate_stats(args)
-    print(f"{percentage}% of {name_of_arist}'s songs contain words related to {chosen_search_term}")
+    song_data = pd.read_csv("in/Spotify Million Song Dataset_exported.csv")
+    model = api.load("glove-wiki-gigaword-50")
+    args = get_artist_and_word()
+    name_of_artist, chosen_search_term, percentage= calculate_stats(args, model, song_data)
+    with open('out/' + f'{name_of_artist}__{chosen_search_term}.txt', 'w') as f:
+        print(f"{percentage}% of {name_of_artist}'s songs contain words related to {chosen_search_term}", file=f)
+    print(f"{percentage}% of {name_of_artist}'s songs contain words related to {chosen_search_term}")
     
 
+
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except ValueError as e:
+        print("Error:", e)
