@@ -5,10 +5,13 @@ from sklearn.model_selection import train_test_split, ShuffleSplit
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 from joblib import dump, load
 import scipy as sp
+from codecarbon import EmissionsTracker
 
 
 
-def prepare_data(filepath):
+def prepare_data(filepath, tracker):
+    """Start carbon tracker"""
+    tracker.start_task("prepare data")
     '''
     Read in data and create X and y split
     '''
@@ -33,12 +36,16 @@ def prepare_data(filepath):
     Save the vectorizer in the models folder
     '''
     dump(vectorizer,"models/tfidf_vectorizer.joblib")
+    tracker.stop_task()
 
     return X_train, X_test, vectorizer
 
 
 
-def fit_vectorizer(X_train, X_test, vectorizer):
+def fit_vectorizer(X_train, X_test, vectorizer, tracker):
+    """Start carbon tracker"""
+    tracker.start_task("fit vectorizer")
+
     '''
     Fit the vectorizer to the data. fit_transform() is used on the training data to scale it. The test data is transformed.
     This ensures that the model is not biased towards a specific feature and prevents the model from learning from the test data.
@@ -52,13 +59,19 @@ def fit_vectorizer(X_train, X_test, vectorizer):
     '''
     sp.sparse.save_npz('feature_extracted_object/X_train_feats.npz', X_train_feats)
     sp.sparse.save_npz('feature_extracted_object/X_test_feats.npz', X_test_feats)
+    tracker.stop_task()
 
 
 
 def main():
+    tracker = EmissionsTracker(project_name="Assignment_2_vectorizing data",
+                           output_dir= os.path.join("..","assignment_5", "out"),
+                           output_file="emissions_assignment_2_vectorizing_data.csv")
+
     filepath= os.path.join("in", "fake_or_real_news.csv")
-    X_train, X_test, vectorizer = prepare_data(filepath)
-    fit_vectorizer(X_train, X_test, vectorizer)
+    X_train, X_test, vectorizer = prepare_data(filepath, tracker)
+    fit_vectorizer(X_train, X_test, vectorizer, tracker)
+    tracker.stop() 
 
 
 

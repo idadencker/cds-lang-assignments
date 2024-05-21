@@ -9,10 +9,14 @@ from sklearn import metrics
 import scipy as sp
 from joblib import dump, load
 from sklearn.model_selection import GridSearchCV
+from codecarbon import EmissionsTracker
 
 
 
-def prepare_data(filepath):
+def prepare_data(filepath, tracker):
+    """Start carbon tracker"""
+    tracker.start_task("Prepare data nn")
+
     news_data = pd.read_csv(filepath)
 
     X = news_data["text"]
@@ -28,11 +32,16 @@ def prepare_data(filepath):
 
     X_test_feats = sp.sparse.load_npz('feature_extracted_object/X_test_feats.npz')
     X_train_feats = sp.sparse.load_npz('feature_extracted_object/X_train_feats.npz')
+    tracker.stop_task()
+
     return X_train_feats, X_test_feats, y_train, y_test
 
 
 
-def fitting_model(X_train_feats, X_test_feats, y_train):
+def fitting_model(X_train_feats, X_test_feats, y_train, tracker):
+    """Start carbon tracker"""
+    tracker.start_task("Fitting NN model")
+
     """ Defining what parameters will be optimsed """
     grid = {
         "activation": ['logistic', 'tanh', 'relu'],
@@ -59,12 +68,15 @@ def fitting_model(X_train_feats, X_test_feats, y_train):
     print("Accuracy:", mlp_cv.best_score_)
 
     y_pred = model.predict(X_test_feats)
+    tracker.stop_task()
 
     return model, y_pred
 
 
 
-def save_metrics(y_test, y_pred, model):
+def save_metrics(y_test, y_pred, model, tracker):
+    """Start carbon tracker"""
+    tracker.start_task("Save NN metrics")
     '''
     Make and save classification report
     '''
@@ -75,14 +87,19 @@ def save_metrics(y_test, y_pred, model):
         file.write(classifier_metrics)
 
     dump(model, "models/MLP_classifier.joblib")
+    tracker.stop_task()
 
 
 
 def main():
+    tracker = EmissionsTracker(project_name="Assignment_2_nn",
+                           output_dir= os.path.join("..","assignment_5", "out"),
+                           output_file="emissions_assignment_2_nn.csv")
     filepath= os.path.join("in", "fake_or_real_news.csv")
-    X_train_feats, X_test_feats, y_train, y_test = prepare_data(filepath)
-    model, y_pred = fitting_model(X_train_feats,X_test_feats, y_train)
-    save_metrics(y_test, y_pred, model)
+    X_train_feats, X_test_feats, y_train, y_test = prepare_data(filepath, tracker)
+    model, y_pred = fitting_model(X_train_feats,X_test_feats, y_train, tracker)
+    save_metrics(y_test, y_pred, model, tracker)
+    tracker.stop() 
 
 
 

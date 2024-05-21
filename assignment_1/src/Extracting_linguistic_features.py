@@ -5,6 +5,7 @@ import spacy
 import re
 import matplotlib.pyplot as plt
 from tqdm import tqdm
+from codecarbon import EmissionsTracker
 
 
 
@@ -13,7 +14,7 @@ def count_pos(doc):
     nouns_count = 0
     for token in doc:
         if token.pos_ == "NOUN":
-            nouns_count += 1
+            nouns_count += 1 
 
     verbs_count = 0
     for token in doc:
@@ -73,7 +74,9 @@ def save_csv(out_df, text_row, subfolder):
 
 
 
-def loop_extract_save(filepath, nlp):
+def loop_extract_save(filepath, nlp, tracker):
+    """Start carbon tracker"""
+    tracker.start_task("Loop and extract information")
     '''
     Loops over all 14 subfolders and all files within each subfolder
     '''
@@ -108,9 +111,14 @@ def loop_extract_save(filepath, nlp):
                     No_unique_per, No_unique_loc, No_unique_org]
 
                 save_csv(out_df, text_row, subfolder)
+    tracker.stop_task()
 
 
-def merge_csv():
+
+def merge_csv(tracker):
+    """Start carbon tracker"""
+    tracker.start_task("merge all csv")
+
     """ Merges all csv files in 'out' folder to 1 dataframe """
     csv_files = [f for f in os.listdir("out/") if f.endswith('.csv')]
     dfs = []
@@ -118,10 +126,16 @@ def merge_csv():
         df = pd.read_csv(os.path.join("out", csv))
         dfs.append(df)
     all_df = pd.concat(dfs, ignore_index=True)
+    
+    tracker.stop_task()
+    
     return all_df
 
 
-def plot(all_df):
+
+def plot(all_df, tracker):
+    """Start carbon tracker"""
+    tracker.start_task("plotting results")
     '''
     This function creates 2 plots. 1 plotting the avarage realtive frequencies by subfolder and 1 plotting the avarage NE by subfolder.
     Columns are specified, avarages for those columns are calculated and the results are plotted
@@ -149,15 +163,23 @@ def plot(all_df):
     plt.tight_layout()
     plt.savefig("out/plot_avg_NE.png")
     plt.show()
+
+    tracker.stop_task()
     
+
 
 def main(): 
+    tracker = EmissionsTracker(project_name="Assignment_1",
+                           output_dir= os.path.join("..","assignment_5", "out"),
+                           output_file="emissions_assignment_1.csv")
     nlp = spacy.load("en_core_web_md")
     filepath = os.path.join("in/USEcorpus")
-    loop_extract_save(filepath,nlp)
-    all_df = merge_csv()
-    plot(all_df)
+    loop_extract_save(filepath,nlp, tracker)
+    all_df = merge_csv(tracker)
+    plot(all_df, tracker)
+    tracker.stop() 
 
-    
+
+
 if __name__ == "__main__":
     main()

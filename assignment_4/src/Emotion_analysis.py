@@ -1,12 +1,17 @@
+import os 
 from transformers import pipeline, AutoModelForTokenClassification, AutoTokenizer
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from tqdm import tqdm
+from codecarbon import EmissionsTracker 
 
 
-def extract_emotions(df):
+
+def extract_emotions(df, tracker):
+    """Start carbon tracker"""
+    tracker.start_task("extract emotions")
     '''
     A pipeline is specified for easy processing
     '''
@@ -30,12 +35,16 @@ def extract_emotions(df):
     
     df['emotion'] = labels
     df['score'] = scores
+    tracker.stop_task()
 
     return df
 
 
-def season_rel_freq_for_emotions(df):
-    
+
+def season_rel_freq_for_emotions(df, tracker):
+    """Start carbon tracker"""
+    tracker.start_task("Plotting relative frequencies")
+
     """ Setting a style and generating a color palette for the bars """
     sns.set_style("darkgrid")
     num_seasons = len(df['Season'].unique())
@@ -67,10 +76,14 @@ def season_rel_freq_for_emotions(df):
     plt.tight_layout()
     plt.savefig("out/Relative_frequency_of_emotions_across_all_seasons.png")
     plt.show()
+    tracker.stop_task()
 
 
-def emotions_count_for_seasons(df):
-    
+
+def emotions_count_for_seasons(df, tracker):
+    """Start carbon tracker"""
+    tracker.start_task("Plotting counts")
+
     """ Setting a style and generating a color palette for the bars """
     sns.set_style("darkgrid")
     num_emotions = len(df['emotion'].unique())
@@ -101,14 +114,24 @@ def emotions_count_for_seasons(df):
     plt.tight_layout()
     plt.savefig("out/Count_all_emotions_for_seasons.png")
     plt.show()
+    tracker.stop_task()
+
 
 
 def main():
+    tracker = EmissionsTracker(project_name="Assignment_4",
+                        output_dir= os.path.join("..","assignment_5", "out"),
+                        output_file="emissions_assignment_4.csv")
+    tracker.start_task("Reading in data")                   
     df = pd.read_csv("in/Game_of_Thrones_Script.csv")
-    df = extract_emotions(df)
-    season_rel_freq_for_emotions(df)
-    emotions_count_for_seasons(df)
+    tracker.stop_task()
 
+    df = extract_emotions(df, tracker)
+    season_rel_freq_for_emotions(df, tracker)
+    emotions_count_for_seasons(df, tracker)
+    tracker.stop() 
+
+    
     
 if __name__ == "__main__":
     main()

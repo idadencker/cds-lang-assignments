@@ -1,11 +1,15 @@
+import os
 import pandas as pd 
 import gensim.downloader as api
 import argparse
 import string
+from codecarbon import EmissionsTracker  
 
 
 
-def get_artist_and_word():
+def get_artist_and_word(tracker):
+    """Start carbon tracker"""
+    tracker.start_task("Get argparse arguments")
     '''
     Function for getting and saving argparsers
     '''
@@ -21,7 +25,8 @@ def get_artist_and_word():
     args = parser.parse_args()
     args.artist= args.artist.lower()
     args.search_term= args.search_term.lower()
-    
+    tracker.stop_task()
+
     return args
 
 
@@ -39,7 +44,10 @@ def list_similar_words(model, chosen_search_term):
 
 
 
-def calculate_stats(args, model, song_data): 
+def calculate_stats(args, model, song_data, tracker): 
+    """Start carbon tracker"""
+    tracker.start_task("Calculating stats for artist and song")
+
     '''
     Function that will return name of the artist chosen, the chosen search term, and the percentage of that artist songs that contain word(s) related to the search term
     '''
@@ -69,20 +77,31 @@ def calculate_stats(args, model, song_data):
 
 
     percentage = round(((n_songs_where_word_from_wordslist_appears / len(artist_df)) * 100),2)
+    tracker.stop_task()
 
     return name_of_artist, chosen_search_term, percentage
 
 
 
 def main():
+    tracker = EmissionsTracker(project_name="Assignment_3",
+                        output_dir= os.path.join("..","assignment_5", "out"),
+                        output_file="emissions_assignment_3.csv")
+    tracker.start_task("Reading in data")                   
     song_data = pd.read_csv("in/Spotify Million Song Dataset_exported.csv")
+    tracker.stop_task()
+
+    tracker.start_task("loading model")    
     model = api.load("glove-wiki-gigaword-50")
-    args = get_artist_and_word()
-    name_of_artist, chosen_search_term, percentage= calculate_stats(args, model, song_data)
+    tracker.stop_task()
+
+    args = get_artist_and_word(tracker)
+    name_of_artist, chosen_search_term, percentage= calculate_stats(args, model, song_data, tracker)
     with open('out/' + f'{name_of_artist}__{chosen_search_term}.txt', 'w') as f:
         print(f"{percentage}% of {name_of_artist}'s songs contain words related to {chosen_search_term}", file=f)
+    tracker.stop() 
     print(f"{percentage}% of {name_of_artist}'s songs contain words related to {chosen_search_term}")
-    
+
 
 
 if __name__ == "__main__":
