@@ -23,11 +23,11 @@ The repository consists of:
 ## Reproducibility 
 To make the program work do the following:
 
-1) clone the repository 
+1) Clone the repository 
 ```python
 $ git clone https://github.com/idadencker/cds-lang-assignments.git
 ```
-2) download the USEcorpus.zip and place the unzipped data in the 'in' folder
+2) Download the USEcorpus.zip and place the unzipped data in the 'in' folder
 3) In a terminal set your directory:
 ```python
 $ cd assignment_1
