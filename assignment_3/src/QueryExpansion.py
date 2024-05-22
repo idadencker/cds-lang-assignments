@@ -13,7 +13,7 @@ def get_artist_and_word(tracker):
     '''
     Function for getting and saving argparsers
     '''
-    parser= argparse.ArgumentParser(description= "Loading and printing an array")
+    parser= argparse.ArgumentParser(description= "Getting artist and search term")
     parser.add_argument("--artist", 
                         "-a",
                         required= True, 
